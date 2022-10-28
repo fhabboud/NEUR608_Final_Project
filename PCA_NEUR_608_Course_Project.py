@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[39]:
 
 
 ## LOAD MODULES/SOFTWARE
@@ -24,21 +20,12 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter, FixedFormatte
 from numpy import genfromtxt
 
 
-# In[3]:
-
-
 #Read in csv with subject demographics 
 df_sorted = pd.read_csv('C:\\Users\\fabbo\\Desktop\\Course_Project\\Phenotypic_V2_input.csv') #MODIFY to replace the .csv filename with the path to your sorted demographics csv file
 
 
-# In[4]:
-
-
 n_subjects=df_sorted.shape[0] #num rows in spreadsheet
 n_vertex=40962
-
-
-# In[6]:
 
 
 #Load left thicknesses into matrix left_ct
@@ -68,9 +55,6 @@ for row in df_sorted['FILE_ID'].tolist()[1:]:
 print("raw right has", np.shape(right_ct)[0], "subjects", np.shape(right_ct)[1], "vertices")
 
 
-# In[19]:
-
-
 #write out in .mat format
 #PCA input - subject x vertex
 out_matrix = np.asmatrix(left_ct)
@@ -86,9 +70,6 @@ scipy.io.savemat(fname, {'X': out_matrix})
 del out_matrix
 
 
-# In[20]:
-
-
 #Concatenate the left and right hemisphere data to get whole brain data
 wb_ct_1= np.concatenate((np.transpose(left_ct), np.transpose(right_ct)),axis=0)
 wb_ct = np.transpose(wb_ct_1)
@@ -98,9 +79,6 @@ out_matrix = np.asmatrix(wb_ct)
 fname = "wholebrain_ct_raw.mat"
 print("Saving whole brain ct to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
-
-
-# In[7]:
 
 
 #Load left volumes into matrix left_vol
@@ -129,9 +107,6 @@ for row in df_sorted['FILE_ID'].tolist()[1:]:
 print("raw right has", np.shape(right_vol)[0], "subjects", np.shape(right_vol)[1], "vertices")
 
 
-# In[21]:
-
-
 #write out in .mat format
 #PCA input - subject x vertex
 out_matrix = np.transpose(np.asmatrix(left_vol))
@@ -146,10 +121,6 @@ print("Saving raw right vol to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 del out_matrix
 
-
-# In[22]:
-
-
 #Concatenate the left and right hemisphere data to get whole brain data
 wb_vol_1 = np.concatenate((np.transpose(left_vol), np.transpose(right_vol)),axis=0)
 wb_vol = np.transpose(wb_vol_1)
@@ -159,9 +130,6 @@ out_matrix = np.asmatrix(wb_vol)
 fname = "wholebrain_vol_raw.mat"
 print("Saving whole brain vol to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
-
-
-# In[8]:
 
 
 #Load left surface area into matrix left_sa
@@ -191,9 +159,6 @@ for row in df_sorted['FILE_ID'].tolist()[1:]:
 print("raw right has", np.shape(right_sa)[0], "subjects", np.shape(right_sa)[1], "vertices")
 
 
-# In[23]:
-
-
 #write out in .mat format
 #PCA input - subject x vertex
 out_matrix = np.transpose(np.asmatrix(left_sa))
@@ -208,10 +173,6 @@ print("Saving raw right sa to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 del out_matrix
 
-
-# In[24]:
-
-
 #Concatenate the left and right hemisphere data to get whole brain data
 wb_sa_1 = np.concatenate((np.transpose(left_sa), np.transpose(right_sa)),axis=0)
 wb_sa = np.transpose(wb_sa_1)
@@ -221,9 +182,6 @@ out_matrix = np.asmatrix(wb_sa)
 fname = "wholebrain_sa_raw.mat"
 print("Saving whole brain sa to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
-
-
-# In[25]:
 
 
 #standardize matrices
@@ -237,10 +195,6 @@ for metric in input_list:
     x_z = np.asarray(stats.zscore(res['X'],axis=None)) #zscore, across both subjects and vertices
     z_dict[metric] = x_z
 
-
-# In[26]:
-
-
 #concatenate each zscored shifted matrix together 
 #forms vertex X subject*n_metrics matrix
 metric=input_list[0]
@@ -250,17 +204,10 @@ for metric in input_list[1:]:
     print(metric)
     wb_z_all = np.concatenate((wb_z_all, z_dict[metric]),axis=1)
 
-
-# In[27]:
-
-
 #write out z scored, shifted data for whole group analysis
 fname = sys.argv[1]
 print(fname, np.shape(wb_z_all))
 savemat(fname, {'X': wb_z_all})
-
-
-# In[32]:
 
 
 #heat mapping for input matrix
@@ -304,23 +251,15 @@ def heatmapping(data,minn,maxx,cbar_tix,fig_width,fig_height,title='',fname=''):
 heatmapping(wb_z_all,np.min(wb_z_all),np.max(wb_z_all),0.5,16,8,title="Input",fname=sys.argv[2]) 
 
 
-# In[33]:
-
-
 #apply PCA to matrix
 pca = PCA(n_components=20)
 principalComponents = pca.fit_transform(wb_z_all)
-
-
-# In[34]:
 
 
 #assess variance explained by each component
 print(pca.explained_variance_ratio_)
 sum(pca.explained_variance_ratio_)
 
-
-# In[44]:
 
 
 #create scree plot
@@ -329,9 +268,6 @@ plt.plot(PC_values, pca.explained_variance_ratio_, 'o-', linewidth=2, color='bla
 plt.xlabel('Principal Component')
 plt.ylabel('Variance Explained')
 plt.show()
-
-
-# In[45]:
 
 
 #harmonize data using covbat
@@ -345,8 +281,6 @@ wb_cov_sa1 = np.transpose(wb_sa)
 wb_cov_sa = pd.DataFrame(wb_cov_sa1)
 
 
-# In[56]:
-
 
 #harmonize data using covbat
 batch1 = genfromtxt('C:\\Users\\fabbo\\Desktop\\Course_Project\\batch.csv', delimiter=',')
@@ -355,9 +289,6 @@ batch = pd.Series(batch1)
 wb_ct_har = covbat.covbat(data=wb_cov_ct, batch=batch)
 wb_vol_har = covbat.covbat(data=wb_cov_vol, batch=batch)
 wb_sa_har = covbat.covbat(data=wb_cov_sa, batch=batch)
-
-
-# In[57]:
 
 
 #write out harmonized matrices in .mat format
@@ -376,10 +307,6 @@ fname = "wholebrain_sa_har.mat"
 print("Saving harmonized sa to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 
-
-# In[58]:
-
-
 #standardize matrices
 input_list=["wholebrain_ct_har","wholebrain_vol_har","wholebrain_sa_har"] #name of the file without the .mat extension
 
@@ -392,9 +319,6 @@ for metric in input_list:
     z_dict[metric] = x_z
 
 
-# In[59]:
-
-
 #concatenate each zscored shifted matrix together 
 #forms vertex X subject*n_metrics matrix
 metric=input_list[0]
@@ -404,17 +328,11 @@ for metric in input_list[1:]:
     print(metric)
     wb_z_all = np.concatenate((wb_z_har, z_dict[metric]),axis=1)
 
-
-# In[60]:
-
-
 #write out z scored, shifted data for whole group analysis
 fname = sys.argv[1]
 print(fname, np.shape(wb_z_har))
 savemat(fname, {'X': wb_z_har})
 
-
-# In[61]:
 
 
 plt.switch_backend('Agg')
@@ -423,24 +341,14 @@ x=scipy.io.loadmat(fname)['X']
 print(np.shape(x))
 print(np.min(x), np.mean(x), np.max(x))
 
-
-# In[62]:
-
-
 #apply PCA to harmonized matrix
 pca = PCA(n_components=20)
 principalComponents = pca.fit_transform(wb_z_all)
 
 
-# In[63]:
-
-
 #assess variance explained by each component
 print(pca.explained_variance_ratio_)
 sum(pca.explained_variance_ratio_)
-
-
-# In[64]:
 
 
 #create scree plot
