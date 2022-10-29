@@ -19,7 +19,10 @@ from matplotlib import cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter, FixedFormatter, FixedLocator
 from numpy import genfromtxt
 
-
+###################################################################################################################
+##################                                INPUT MATRIX                                #####################
+###################################################################################################################
+#code adapted from https://github.com/CoBrALab/cobra-nmf
 #Read in csv with subject demographics 
 df_sorted = pd.read_csv('C:\\Users\\fabbo\\Desktop\\Course_Project\\Phenotypic_V2_input.csv') #MODIFY to replace the .csv filename with the path to your sorted demographics csv file
 
@@ -250,6 +253,11 @@ def heatmapping(data,minn,maxx,cbar_tix,fig_width,fig_height,title='',fname=''):
 
 heatmapping(wb_z_all,np.min(wb_z_all),np.max(wb_z_all),0.5,16,8,title="Input",fname=sys.argv[2]) 
 
+#====================================================================================================================================================
+
+###################################################################################################################
+######################                                PCA                                 #########################
+###################################################################################################################
 
 #apply PCA to matrix
 pca = PCA(n_components=20)
@@ -261,7 +269,6 @@ print(pca.explained_variance_ratio_)
 sum(pca.explained_variance_ratio_)
 
 
-
 #create scree plot
 PC_values = np.arange(pca.n_components_) + 1
 plt.plot(PC_values, pca.explained_variance_ratio_, 'o-', linewidth=2, color='black')
@@ -269,6 +276,11 @@ plt.xlabel('Principal Component')
 plt.ylabel('Variance Explained')
 plt.show()
 
+#====================================================================================================================================================
+
+###################################################################################################################
+################                            HARMONIZED DATA ANALYSIS                           ####################
+###################################################################################################################
 
 #harmonize data using covbat
 wb_cov_ct1 = np.transpose(wb_ct)
@@ -332,7 +344,6 @@ for metric in input_list[1:]:
 fname = sys.argv[1]
 print(fname, np.shape(wb_z_har))
 savemat(fname, {'X': wb_z_har})
-
 
 
 plt.switch_backend('Agg')
