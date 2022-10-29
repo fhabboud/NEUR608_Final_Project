@@ -21,8 +21,9 @@ from numpy import genfromtxt
 
 ###################################################################################################################
 ##################                                INPUT MATRIX                                #####################
+##################              CODE ADAPTED FROM https://github.com/CoBrALab/cobra-nmf       #####################
 ###################################################################################################################
-#code adapted from https://github.com/CoBrALab/cobra-nmf
+
 #Read in csv with subject demographics 
 df_sorted = pd.read_csv('C:\\Users\\fabbo\\Desktop\\Course_Project\\Phenotypic_V2_input.csv') #MODIFY to replace the .csv filename with the path to your sorted demographics csv file
 
