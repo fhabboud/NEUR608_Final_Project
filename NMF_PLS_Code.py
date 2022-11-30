@@ -23,8 +23,12 @@ from matplotlib import cm
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter, FixedFormatter, FixedLocator
 from numpy import genfromtxt
 from pyls import behavioral_pls
+from statsmodels.stats.multitest import fdrcorrection
 
-# In[2]:
+###################################################################################################################
+##################                                INPUT MATRIX                                #####################
+##################              CODE ADAPTED FROM https://github.com/CoBrALab/cobra-nmf       #####################
+###################################################################################################################
 
 
 #Read in csv with subject demographics 
@@ -37,15 +41,9 @@ right_mask = np.loadtxt('C:\\Users\\fabbo\\OneDrive - McGill University\\Courses
 right_valid = (np.where(right_mask==1))
 right_invalid = (np.where(right_mask==0))
 
-# In[3]:
-
 
 n_subjects=df_sorted.shape[0] #num rows in spreadsheet
 n_vertex=40962
-
-
-# In[4]:
-
 
 #Load left thicknesses into matrix left_ct
 #do first row to create matrix, concat from there
@@ -95,9 +93,6 @@ print("Saving raw right ct to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 del out_matrix
 
-# In[6]:
-
-
 #Concatenate the left and right hemisphere data to get whole brain data
 wb_ct = np.concatenate((left_ct_valid, right_ct_valid),axis=1)
 
@@ -108,9 +103,7 @@ print("Saving whole brain ct to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 
 
-# In[7]:
-
-
+#%%
 #Load left volumes into matrix left_vol
 #do first row to create matrix, concat from there
 row = df_sorted['FILE_ID'].tolist()[0] 
@@ -159,10 +152,6 @@ print("Saving raw right vol to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 del out_matrix
 
-
-# In[9]:
-
-
 #Concatenate the left and right hemisphere data to get whole brain data
 wb_vol = np.concatenate((left_vol_valid, right_vol_valid),axis=1)
 
@@ -173,9 +162,7 @@ print("Saving whole brain vol to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 
 
-# In[10]:
-
-
+#%%
 #Load left surface area into matrix left_sa
 #do first row to create matrix, concat from there
 row = df_sorted['FILE_ID'].tolist()[0] 
@@ -226,10 +213,6 @@ print("Saving raw right sa to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 del out_matrix
 
-
-# In[12]:
-
-
 #Concatenate the left and right hemisphere data to get whole brain data
 wb_sa = np.concatenate((left_sa_valid, right_sa_valid),axis=1)
 
@@ -239,10 +222,7 @@ fname = "wholebrain_sa_raw.mat"
 print("Saving whole brain sa to", fname, "with shape", np.shape(out_matrix))
 scipy.io.savemat(fname, {'X': out_matrix})
 
-
-# In[13]:
-
-
+#%%
 #standardize matrices
 input_list=["wholebrain_ct_raw","wholebrain_vol_raw","wholebrain_sa_raw"] #name of the file without the .mat extension
 
@@ -255,9 +235,6 @@ for metric in input_list:
     z_dict[metric] = x_z
 
 
-# In[14]:
-
-
 #concatenate each zscored shifted matrix together 
 #forms vertex X subject*n_metrics matrix
 metric=input_list[0]
@@ -266,19 +243,13 @@ for metric in input_list[1:]:
     print(metric)
     wb_z_all = np.concatenate((wb_z_all, z_dict[metric]),axis=1)
 
-
-# In[15]:
-
-
 #write out z scored, shifted data for whole group analysis
 fname = sys.argv[1]
 print(fname, np.shape(wb_z_all))
 savemat(fname, {'X': wb_z_all})
 
 
-# In[16]:
-
-
+#%%
 #heat mapping for input matrix
 def heatmapping(data,minn,maxx,cbar_tix,fig_width,fig_height,title='',fname=''):
     import matplotlib as mpl
@@ -319,26 +290,25 @@ def heatmapping(data,minn,maxx,cbar_tix,fig_width,fig_height,title='',fname=''):
 
 heatmapping(wb_z_all,np.min(wb_z_all),np.max(wb_z_all),0.5,16,8,title="Input",fname=sys.argv[2]) 
 
+#====================================================================================================================================================
 
-# In[17]:
+###################################################################################################################
+######################                                PCA                                 #########################
+###################################################################################################################
 
-
+#%%
 #apply PCA to matrix
 pca = PCA(n_components=20)
 principalComponents = pca.fit_transform(wb_z_all)
 
 
-# In[18]:
-
-
+#%%
 #assess variance explained by each component
 print(pca.explained_variance_ratio_)
 sum(pca.explained_variance_ratio_)
 
 
-# In[19]:
-
-
+#%%
 #create scree plot
 PC_values = np.arange(pca.n_components_) + 1
 plt.plot(PC_values, pca.explained_variance_ratio_, 'o-', linewidth=2, color='black')
@@ -347,8 +317,11 @@ plt.ylabel('Variance Explained')
 plt.savefig('PCA.svg',bbox_inches='tight', transparent=True)
 plt.show()
 
-# In[21]:
+###################################################################################################################
+################                            HARMONIZED DATA ANALYSIS                           ####################
+###################################################################################################################
 
+#%%
 #harmonize data using covbat
 wb_z_har_1 = pd.DataFrame(np.transpose(wb_z_all))
 batch1 = genfromtxt('C:\\Users\\fabbo\\Desktop\\Course_Project\\batch.csv', delimiter=',')
@@ -357,9 +330,7 @@ batch = pd.Series(batch1)
 wb_z_har_2 = covbat.covbat(data=wb_z_har_1, batch=batch)
 
 
-# In[27]:
-
-
+#%%
 #apply PCA to harmonized matrix
 wb_z_har_3 = np.array(wb_z_har_2)
 wb_z_har = np.transpose(wb_z_har_3)
@@ -367,17 +338,13 @@ pca_har = PCA(n_components=20)
 principalComponents_har = pca_har.fit_transform(wb_z_har)
 
 
-# In[28]:
-
-
+#%%
 #assess variance explained by each component
 print(pca_har.explained_variance_ratio_)
 sum(pca_har.explained_variance_ratio_)
 
 
-# In[29]:
-
-
+#%%
 #create scree plot
 PC_values = np.arange(pca_har.n_components_) + 1
 plt.plot(PC_values, pca_har.explained_variance_ratio_, 'o-', linewidth=2, color='black')
@@ -386,25 +353,24 @@ plt.ylabel('Variance Explained')
 plt.savefig('PCA_Har.svg',bbox_inches='tight', transparent=True)
 plt.show()
 
-# In[30]:
-
-#run three component PCA only
+#%%
+#run two component PCA only
 pca_2 = PCA(n_components=2)
 principalComponents_2 = pca_2.fit_transform(wb_z_all)
 
 
 #%%
+#write out PCA loadings 
 loadings = pd.DataFrame(pca_2.components_.T, columns=['PC1', 'PC2'])
 np.savetxt("PCA_Loadings.csv", loadings, delimiter=",")
 
 #%%
-
 #load components
 PC1 = np.array(loadings.iloc[:, 0])
 PC2 = np.array(loadings.iloc[:, 1])
 
 #%%
-#separate components based on metric
+#separate components based on metric, raise to 10^4 to be able to plot
 PC1_ct = (PC1[0:77122,])*1000
 PC1_vol = (PC1[77122:154244,])*1000
 PC1_sa = (PC1[154244:231366,])*1000
@@ -412,7 +378,6 @@ PC2_ct = (PC2[0:77122,])*1000
 PC2_vol = (PC2[77122:154244,])*1000
 PC2_sa = (PC2[154244:231366,])*1000
 
-#%%
 n_vertex = 77122
 PC1_ct = np.transpose(PC1_ct.reshape(1,n_vertex))
 PC1_vol = np.transpose(PC1_vol.reshape(1,n_vertex))
@@ -586,56 +551,37 @@ for comp in range(0,compnum):
 right_statmap = out_dir + "/right_PC2_sa" + str(compnum) + ".txt"
 np.savetxt(right_statmap,right_outarray, fmt='%f')
 
-# In[31]:
+#====================================================================================================================================================
+###################################################################################################################
+################                      BEHAVIOURAL PARTIAL LEAST SQUARES                        ####################
+###################################################################################################################
 
+#%%
+#load in behavioural measures for PLS
 beh_var = np.loadtxt('C:\\Users\\fabbo\\Desktop\\Course_Project\\Final_Beh_Input.txt')
 print(np.shape(beh_var))
 
 
-# In[37]:
+#%%
 #run behavioural pls
 bpls = behavioral_pls(principalComponents_2, beh_var)
 bpls
 
-
-# In[38]:
-
-
-help(bpls)
-
-
-# In[43]:
-
-print(bpls.x_scores)
-np.savetxt("LVx.csv", bpls.x_scores, delimiter=",")
-
 #%%
-np.shape(bpls.x_scores)
-
-# In[ ]:
-
-print(bpls.y_scores)
-
-#%%
-print(bpls.y_weights)
-
-#%%
+#save y_loadings
 print(bpls.y_loadings)
 np.savetxt("LVy.csv", bpls.y_loadings, delimiter=",")
 
 #%%
-#After doing PLS and gotten the number of LCs, checked for permutation significance:
-
+#Check for permutation significance using FDR
 bpls['permres']['pvals']
 PLS_p_values = bpls['permres']['pvals']
 PLS_p_values_for_correction = PLS_p_values[0:6] #Based on choosing 5 LCs
-
-#%%
-import statsmodels.stats.multitest
-from statsmodels.stats.multitest import fdrcorrection
 fdr = fdrcorrection(PLS_p_values_for_correction, alpha=0.05, method='indep', is_sorted=False)
 print(fdr)
+
 #%%
+#calculate bootstrapped standard deviation for each behavioural variable of LV1
 sd1 = np.std(bpls.bootres.y_loadings_boot[0][0])
 sd2 = np.std(bpls.bootres.y_loadings_boot[1][0])
 sd3 = np.std(bpls.bootres.y_loadings_boot[2][0])
@@ -649,19 +595,8 @@ sd10 = np.std(bpls.bootres.y_loadings_boot[9][0])
 sd11 = np.std(bpls.bootres.y_loadings_boot[10][0])
 sd12 = np.std(bpls.bootres.y_loadings_boot[11][0])
 
-print(sd1)
-print(sd2)
-print(sd3)
-print(sd4)
-print(sd5)
-print(sd6)
-print(sd7)
-print(sd8)
-print(sd9)
-print(sd10)
-print(sd11)
-print(sd12)
 #%%
+#plot LV1
 LVy1 = pd.read_csv(r"LVy1.csv")
 LVy1.head()
 df_LVy1 = pd.DataFrame(LVy1)
@@ -691,6 +626,7 @@ plt.savefig('LV1.svg', bbox_inches='tight', transparent = True, dpi=1200)
 plt.show()
 
 #%%
+#calculate bootstrapped standard deviation for each behavioural variable of LV2
 sd1 = np.std(bpls.bootres.y_loadings_boot[0][1])
 sd2 = np.std(bpls.bootres.y_loadings_boot[1][1])
 sd3 = np.std(bpls.bootres.y_loadings_boot[2][1])
@@ -704,19 +640,8 @@ sd10 = np.std(bpls.bootres.y_loadings_boot[9][1])
 sd11 = np.std(bpls.bootres.y_loadings_boot[10][1])
 sd12 = np.std(bpls.bootres.y_loadings_boot[11][1])
 
-print(sd1)
-print(sd2)
-print(sd3)
-print(sd4)
-print(sd5)
-print(sd6)
-print(sd7)
-print(sd8)
-print(sd9)
-print(sd10)
-print(sd11)
-print(sd12)
 #%%
+#plot LV2
 LVy2 = pd.read_csv(r"LVy2.csv")
 LVy2.head()
 df_LVy2 = pd.DataFrame(LVy2)
@@ -744,18 +669,17 @@ ax.invert_yaxis()
 ax.set_xlabel("Correlation", fontsize = 20)
 plt.savefig('LV2.svg', bbox_inches='tight', transparent = True, dpi=1200)
 plt.show()
+
 #%%
-print(bpls.varexp)
-
-
-# %%
-np.savetxt("Lv1_x.csv", bpls.bootres.x_weights_normed, delimiter=",")
+#save the bootstrap ratio for PC variables 
+np.savetxt("Lv_x.csv", bpls.bootres.x_weights_normed, delimiter=",")
 
 # %%
+#plot PC bootstrap ratio for LV1
 Lv1_x = pd.read_csv(r"Lv1_x.csv")
 Lv1_x.head()
 df_Lv1_x = pd.DataFrame(Lv1_x)
-# %%
+#%%
 pc = df_Lv1_x['PC'].head(12)
 bsr = df_Lv1_x['BSR'].head(12)
 
@@ -778,3 +702,29 @@ plt.axvline(2.58, color = 'black')
 plt.savefig('PC_cont.svg', bbox_inches='tight', transparent = True, dpi=1200)
 plt.show()
 # %%
+#plot PC bootstrap ratio for LV2
+Lv2_x = pd.read_csv(r"Lv2_x.csv")
+Lv2_x.head()
+df_Lv2_x = pd.DataFrame(Lv2_x)
+#%%
+pc = df_Lv2_x['PC'].head(12)
+bsr = df_Lv2_x['BSR'].head(12)
+
+fig, ax = plt.subplots(figsize =(10, 5))
+ax.barh(pc, bsr, color= 'grey')
+for s in ['top', 'bottom', 'left', 'right']:
+    ax.spines[s].set_visible(False)
+ax.xaxis.set_ticks_position('none')
+ax.yaxis.set_ticks_position('none')
+ax.xaxis.set_tick_params(pad = 5)
+ax.yaxis.set_tick_params(pad = 10)
+for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+	label.set_fontsize(16)
+
+ax.grid(b = True, color ='grey',
+        linestyle ='-.', linewidth = 0.5,
+        alpha = 0.2)
+ax.invert_yaxis()
+plt.axvline(2.58, color = 'black')
+plt.savefig('PC_cont.svg', bbox_inches='tight', transparent = True, dpi=1200)
+plt.show()
