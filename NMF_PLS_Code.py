@@ -320,7 +320,8 @@ plt.show()
 ###################################################################################################################
 ################                            HARMONIZED DATA ANALYSIS                           ####################
 ###################################################################################################################
-
+def covbat(data, batch, model=None, numerical_covariates=None, pct_var=0.95, n_pc=0):
+    """code by Andrew Chen, see andy1764/CovBat_Harmonization on GitHub"""
 #%%
 #harmonize data using covbat
 wb_z_har_1 = pd.DataFrame(np.transpose(wb_z_all))
